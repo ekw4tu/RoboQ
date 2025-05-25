@@ -1,0 +1,50 @@
+To run:
+
+Step 1:
+To avoid installing the requirements permanently you should create a virtual environment:
+
+python3 -m venv venv
+
+Then enable the virtual environment using:
+
+source venv/bin/activate
+
+To deactivate it later do:
+
+deactivate
+
+Step 2:
+Install the required python packages:
+
+pip install -r requirements.txt
+
+Step 3:
+Create a .env file with a valid OpenAI API key.  Put the following line in the file:
+
+OPENAI_API_KEY=<...>
+
+where <...> is replaced with a valid OpenAI API key.
+
+Step 3:
+Start the web server:
+
+python app.py
+
+The web server is working if you see the following:
+ * Serving Flask app 'app'
+ * Debug mode: on
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.0.0.86:5000
+Press CTRL+C to quit
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 543-960-051
+
+Step 4:
+Open a browser and goto the url:
+
+127.0.0.1:5000
+
+Upload a PDF file and select it to open the thumbnail page.  Select a thumbnail to generate questions for that page.

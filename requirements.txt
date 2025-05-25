@@ -1,0 +1,7 @@
+langchain-community
+langchain-openai
+langchain
+pymupdf
+flask
+pypdf
+python-dotenv

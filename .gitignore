@@ -1,0 +1,6 @@
+__pycache__/
+static/
+uploads/
+venv/
+.DS_Store
+.env
