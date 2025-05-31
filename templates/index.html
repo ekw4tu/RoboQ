@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Upload PDF</title>
+    <script>
+      function toggleUploadButton() {
+        const fileInput = document.getElementById('file-input');
+        const uploadButton = document.getElementById('upload-button');
+        if (fileInput.files.length > 0) {
+          uploadButton.style.display = 'inline';
+        } else {
+          uploadButton.style.display = 'none';
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const fileInput = document.getElementById('file-input');
+        fileInput.addEventListener('change', toggleUploadButton);
+        toggleUploadButton(); // Initial call to set the correct state on page load
+      });
+    </script>
+  </head>
+  <body>
+    <h1>Select PDF</h1>
+    <form method="post" action="/upload" enctype="multipart/form-data">
+      <input type="file" name="file" id="file-input">
+      <input type="submit" value="Upload" id="upload-button" style="display: none;">
+    </form>
+    <h2>Uploaded Files</h2>
+    <ul>
+      {% for file in files %}
+        <li><a href="{{ url_for('view_thumbnails', filename=file) }}">{{ file }}</a></li>
+      {% endfor %}
+    </ul>
+  </body>
+</html>

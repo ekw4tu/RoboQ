@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Quiz Me</title>
+    <style>
+      .container {
+        display: flex;
+        height: 98vh;  /* Full viewport height */
+        overflow: hidden;  /* Prevent additional scrollbars */
+      }
+      .thumbnail-container {
+        /*flex: 0 0 200px;  /* Initial width for thumbnails */
+        width: 20%;  /* Initial width for thumbnails */
+        overflow-y: auto;  /* Vertical scrollbar */
+        border-right: 1px solid #ccc;
+        padding-right: 10px;
+        resize: horizontal;  /* Allow horizontal resizing */
+      }
+      .thumbnail {
+        display: flex;
+        align-items: center;
+        /*margin-bottom: 4px;*/
+        padding: 2px;
+        cursor: pointer;  /* Change cursor to pointer on hover */
+        border: 3px solid white;
+      }
+      .thumbnail span {
+        margin-right: 10px;
+        font-weight: bold;
+      }
+      .thumbnail-image {
+        width: 100%;  /* Make the image div take full width */
+      }
+      .thumbnail img {
+        width: 100%;  /* Make the image width responsive */
+        height: auto;  /* Maintain aspect ratio */
+        max-width: 100%;  /* Prevent image from overflowing */
+        display: block;  /* Remove any extra space below the image */
+      }
+      .thumbnail.active {
+        border-color: black;  /* Change border to black when active */
+      }
+      .frame-container {
+        flex-grow: 1;  /* Take up remaining space */
+        overflow: hidden;  /* Prevent additional scrollbars */
+      }
+      .frame {
+        /*width: 100%;*/
+        height: 100%;
+        border: none;  /* Remove default iframe border */
+      }
+    </style>
+    <script>
+      function showPageNumber(pageNumber, filename) {
+        const frame = document.getElementById('frame');
+        frame.contentWindow.document.open();
+        frame.contentWindow.document.write(`
+          <html>
+            <head>
+              <style>
+                body {
+                  font-family: Arial, sans-serif;
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                  height: 100vh;
+                  margin: 0;
+                }
+                .loading {
+                  font-size: 24px;
+                  font-weight: bold;
+                }
+                .dots::after {
+                  content: '.';
+                  animation: blink 1s steps(5, end) infinite;
+                }
+                .dots:nth-child(2) {
+                  animation-delay: 0.2s;
+                }
+                .dots:nth-child(3) {
+                  animation-delay: 0.4s;
+                }
+                @keyframes blink {
+                  0%, 80%, 100% {
+                    opacity: 0;
+                  }
+                  40% {
+                    opacity: 1;
+                  }
+                }
+              </style>
+            </head>
+            <body>
+              <div class="loading">Generating questions for page ${pageNumber + 1} <span class="dots"></span><span class="dots"></span><span class="dots"></span></div>
+            </body>
+          </html>
+        `);
+        frame.contentWindow.document.close();
+        frame.src = `/page/${pageNumber}/${filename}`;
+        setActiveThumbnail(pageNumber);
+      }
+
+      function setActiveThumbnail(pageNumber) {
+        const thumbnails = document.querySelectorAll('.thumbnail');
+        const thumbnailContainer = document.querySelector('.thumbnail-container');
+        
+        thumbnails.forEach((thumbnail, index) => {
+          if (index === pageNumber) {
+            thumbnail.classList.add('active');
+            // Scroll the active thumbnail into view
+            thumbnail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          } else {
+            thumbnail.classList.remove('active');
+          }
+        });
+      }
+
+      function adjustActiveScrollPosition() {
+        const activeThumbnail = document.querySelector('.thumbnail.active');
+        if (activeThumbnail) {
+          activeThumbnail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }
+
+      // Create a ResizeObserver to watch for changes in the thumbnail container's size
+      const resizeObserver = new ResizeObserver(entries => {
+        for (let entry of entries) {
+          if (entry.target.classList.contains('thumbnail-container')) {
+            adjustActiveScrollPosition();
+          }
+        }
+      });
+
+      // Start observing the thumbnail container
+      window.addEventListener('load', () => {
+        const thumbnailContainer = document.querySelector('.thumbnail-container');
+        resizeObserver.observe(thumbnailContainer);
+      });
+    </script>
+  </head>
+  <body>
+    <!--h1>PDF Thumbnails for {{ filename }}</h1-->
+    <div class="container">
+      <div class="thumbnail-container">
+        {% for thumbnail in thumbnails %}
+          <div class="thumbnail" onclick="showPageNumber({{ loop.index0 }}, '{{ filename }}')">
+            <span>{{ loop.index0 + 1 }}</span>
+            <div class="thumbnail-image">
+              <img src="{{ url_for('static', filename='thumbnails/' ~ thumbnail) }}" alt="Thumbnail">
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="frame-container">
+        <iframe id="frame" class="frame" src="" width="100%" height="100%"></iframe>
+      </div>
+    </div>
+  </body>
+</html>
