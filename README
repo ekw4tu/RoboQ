@@ -1,4 +1,31 @@
-To run:
+RoboQ
+=====
+
+RoboQ turns PDF handouts into multiple-choice practice quizzes.
+
+Pipeline (Phase 1: Logic & Reasoning Upgrade)
+---------------------------------------------
+A semantic router (gpt-4o-mini) inspects the first ~300 characters of the
+parsed document and classifies it as LOGIC_BASED or MEMORIZATION_BASED:
+
+  * MEMORIZATION_BASED -> legacy refine chain on gpt-4o-mini.
+  * LOGIC_BASED        -> LCEL pipeline on gpt-4o:
+                            1. Procedural abstraction (extract rules/formulas)
+                            2. CoT + few-shot generation with
+                               .with_structured_output(QuizOutput)
+
+Chunks are processed concurrently via asyncio. If the logic branch fails on
+a chunk (e.g. token limit), that chunk transparently falls back to the
+memorization branch. The `reasoning` field is logged and stripped before the
+response reaches the frontend, so the UI contract is unchanged.
+
+Requirements
+------------
+* Python 3.10+
+* An OpenAI API key with access to both gpt-4o-mini and gpt-4o.
+
+To run
+------
 
 Step 1:
 To avoid installing the requirements permanently you should create a virtual environment:
@@ -19,13 +46,16 @@ Install the required python packages:
 pip install -r requirements.txt
 
 Step 3:
-Create a .env file with a valid OpenAI API key.  Put the following line in the file:
+Create a .env file in the project root with a valid OpenAI API key. Put the
+following line in the file:
 
-OPENAI_API_KEY=<...>
+OPENAI_API_KEY=sk-...
 
-where <...> is replaced with a valid OpenAI API key.
+where sk-... is replaced with a valid OpenAI API key. The key must have
+access to both gpt-4o-mini (router + memorization branch) and gpt-4o (logic
+branch). Do NOT commit the .env file.
 
-Step 3:
+Step 4:
 Start the web server:
 
 python app.py
@@ -42,7 +72,7 @@ Press CTRL+C to quit
  * Debugger is active!
  * Debugger PIN: 543-960-051
 
-Step 4:
+Step 5:
 Open a browser and goto the url:
 
 127.0.0.1:5000

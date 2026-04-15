@@ -1,6 +1,8 @@
 langchain-community
 langchain-openai
 langchain
+langchain-core
+pydantic>=2
 pymupdf
 flask
 pypdf
