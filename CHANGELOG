@@ -1,0 +1,70 @@
+RoboQ Changelog
+===============
+
+All notable changes to the RoboQ quiz-generation pipeline are recorded here.
+Dates are in YYYY-MM-DD format.
+
+
+[2026-04-15] Phase 1: Logic & Reasoning Upgrade
+------------------------------------------------
+
+Added
+~~~~~
+* Semantic router (gpt-4o-mini) that inspects the first ~300 characters of
+  the parsed document and classifies it as LOGIC_BASED or MEMORIZATION_BASED
+  using langchain `.with_structured_output(RouteDecision)`.
+  See script.py::build_router.
+* Branch B — logic pipeline (gpt-4o), implemented as an LCEL chain:
+    1. Procedural abstraction sub-chain that extracts theorems, formulas,
+       procedural rules, and common pitfalls from a chunk.
+    2. CoT + few-shot generation sub-chain with three in-context examples
+       (calculus chain rule, kinetic energy, binary-search complexity).
+    3. Pydantic-enforced structured output via
+       `.with_structured_output(QuizOutput)`.
+  See script.py::build_logic_chain.
+* Pydantic schemas: `RouteDecision`, `LogicQuestion` (with a `reasoning`
+  field that forces Chain-of-Thought before the question fields), and
+  `QuizOutput`. See script.py lines 43–78.
+* Asynchronous chunk fan-out with `asyncio.gather` so gpt-4o + CoT latency
+  is amortized across chunks. See script.py::_generate_for_document_async.
+* Per-chunk fallback from the logic branch to the memorization branch on
+  token-limit or any other logic-branch exception, so no chunk is dropped.
+  See script.py::run_logic_branch and _is_token_limit_error.
+* Router-level fallback: if classification itself fails, the document
+  defaults to the memorization branch.
+* `reasoning` field is logged to stdout and stripped from the response
+  before it reaches the frontend, keeping the UI contract unchanged.
+  See script.py::_normalize_question.
+* CHANGELOG file (this file).
+
+Changed
+~~~~~~~
+* script.py rewritten around the router + two-branch architecture. Public
+  entry point `generate_questions(file_path, pagenum)` keeps the exact same
+  signature and return shape, so app.py needs zero changes.
+* Branch A — memorization pipeline — still uses
+  `load_summarize_chain(chain_type="refine")` on gpt-4o-mini and the
+  existing free-form JSON cleaner, now wrapped in an async helper
+  (`run_memorization_branch`) so it composes with the orchestration layer.
+* README rewritten to document the Phase 1 architecture, list the two
+  required model entitlements (gpt-4o-mini and gpt-4o), and renumber the
+  run steps.
+* requirements.txt now pins `langchain-core` and `pydantic>=2` explicitly
+  (previously pulled in transitively).
+
+Notes
+~~~~~
+* The OpenAI API key in .env must have access to BOTH gpt-4o-mini (router +
+  memorization branch) and gpt-4o (logic branch).
+* .env is not committed — configure it locally per the README.
+
+
+[2025 and earlier] Pre-Phase-1 baseline
+---------------------------------------
+
+* Flask web app (app.py) that accepts PDF uploads, renders per-page
+  thumbnails with PyMuPDF, and generates a quiz for the selected page.
+* Single quiz-generation path: `load_summarize_chain(chain_type="refine")`
+  on gpt-4o-mini driven by a hand-written AP-style prompt, with regex-based
+  JSON cleanup and option shuffling.
+* No routing, no structured output, no async, no CoT.
